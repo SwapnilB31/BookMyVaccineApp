@@ -1,22 +1,49 @@
+import 'react-native-gesture-handler'
 import React, {useState} from 'react'
-import SideBar from './components/SideBar.js'
-import Header from './components/HeaderComponent.js'
-import { View, StyleSheet, Button} from 'react-native'
- 
+import UserDetails from './pages/UserDetails'
+import ReadSMS from './pages/ReadSMS'
+import PingAddress from './pages/PingAddress'
+import AccountNavigator from './navigators/AccountNavigator'
+import AppointmentNavigator from './navigators/AppointmentNavigator'
+import { View, StyleSheet, Button, Text} from 'react-native'
+import {createDrawerNavigator} from '@react-navigation/drawer'
+import {NavigationContainer} from '@react-navigation/native'
+import AuthProvider from './contexts/AuthProvider'
+import UserProvider from './contexts/UserProvider'
 
+function Home({navigator}) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center"
+      }}
+    >
+      <Text style={{
+        fontSize : 24,
+        fontWeight : "600"
+      }}>Home</Text>
+    </View>
+  )
+}
 
 export default function App() {
-  const [sideBarOpen,setSideBarOpen] = useState(false)
-  function handlePress() {
-    //alert('hi')
-    setSideBarOpen(prev => !prev)
-  }
-  console.log('it works') 
+
+  const Drawer = createDrawerNavigator()
+  
   return (
-    <View style={{flex : 1}}>
-      <Header setSideBarOpen={setSideBarOpen}/>
-      {sideBarOpen && <SideBar/>}
-    </View>
-    
+    <UserProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <Drawer.Navigator initialRouteName="Home">
+            <Drawer.Screen name="Home" component={Home}/>
+            <Drawer.Screen name="Appointments" component={AppointmentNavigator}/>
+            <Drawer.Screen name="Read SMS" component={ReadSMS}/>
+            <Drawer.Screen name="Account" component={AccountNavigator}/>
+          </Drawer.Navigator>
+        </NavigationContainer>
+      </AuthProvider>
+    </UserProvider>
   )
 }

@@ -3,25 +3,14 @@ import {TouchableOpacity} from 'react-native'
 import {Header} from 'react-native-elements'
 import Icon from 'react-native-vector-icons/Ionicons'
 
-/**
- * 
- * @param {Object} param0
- * @param {React.Dispatch<React.SetStateAction<boolean>>} param0.setSideBarOpen 
- * @returns 
- */
-
-function MenuItem({setSideBarOpen}) {
-
-    const handlePress = () => {
-        setSideBarOpen(prev => !prev)
-    }
+function MenuItem({navigation}) {
     return (
         <TouchableOpacity
-            onPress={handlePress}    
+            onPress={() => {navigation.toggleDrawer()}}    
         >
             <Icon
                 name="menu"
-                color="#fff"
+                color="#444"
                 size={30}   
             />
         </TouchableOpacity>
@@ -29,12 +18,25 @@ function MenuItem({setSideBarOpen}) {
 }
 
 
-export default function HeaderComponent({setSideBarOpen}) {
+export default function HeaderComponent({navigation,title}) {
     return (
         <Header
-            leftComponent={<MenuItem setSideBarOpen={setSideBarOpen}/>}
-            centerComponent={{ text: 'MY TITLE', style: { color: '#fff' }}}
-            rightComponent={{ icon: 'home', color: '#fff' }}
+            containerStyle={{
+                backgroundColor : "#fff",
+            }}
+            placement="left"
+            leftComponent={<MenuItem navigation={navigation}/>}
+            centerComponent={{ 
+                text: title, 
+                style: { 
+                    color: '#444', 
+                    fontWeight : "600", 
+                    fontFamily : "sans-serif-medium", 
+                    fontSize : 21, 
+                    textAlignVertical : "bottom", 
+                    marginLeft : 10
+                }
+            }}
         >
         </Header>
     )

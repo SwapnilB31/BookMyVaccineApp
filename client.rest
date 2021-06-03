@@ -1,0 +1,22 @@
+GET https://cdn-api.co-vin.in/api/v2/public/appointment/sessions/calendarByDistrict?district_id=49&date=18-05-2021
+
+###
+
+GET https://cdn-api.co-vin.in/api/v2/admin/location/states
+
+###
+GET https://cdn-api.co-vin.in/api/v2/admin/location/districts/
+
+###
+GET https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByDistrict?district_id=55&date=23-5-2021
+
+### To get the OTP
+
+POST https://cdn-api.co-vin.in/api/v2/auth/public/generateOTP
+
+Accept: application/json
+Content-Type: application/json
+
+{
+    "mobile" : "8638308097"
+}
