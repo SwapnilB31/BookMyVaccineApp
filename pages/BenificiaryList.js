@@ -1,4 +1,5 @@
-import React, {useState,useEffect,useContext} from 'react'
+import React, {useState,useEffect,useContext,useCallback} from 'react'
+import {useFocusEffect} from '@react-navigation/native'
 import {View, Text, FlatList, StyleSheet, Dimensions, ActivityIndicator} from 'react-native'
 import {Divider, Button} from 'react-native-elements'
 import Icon from 'react-native-vector-icons/FontAwesome5'
@@ -7,6 +8,7 @@ import {AuthContext} from '../contexts/AuthProvider'
 import {UserContext} from '../contexts/UserProvider'
 import {headers} from '../data/headers'
 import InfoAlert from '../components/InfoAlert'
+import { transform } from '@babel/core'
 
 const styles = StyleSheet.create({
     container : {
@@ -139,8 +141,9 @@ class BenificiaryCard extends React.PureComponent {
         await setYearOfBirth(benificiary.birth_year)
         await setIdType(benificiary.photo_id_type)
         await setIdNumber(benificiary.photo_id_number)
-        this.props.navigation.navigate("Account Details")
+        this.props.navigation.navigate("Account Details") 
     }
+
 
     render() {
         const benificiary = this.props.benificiary
@@ -159,17 +162,17 @@ class BenificiaryCard extends React.PureComponent {
                     benificiary.dose1_date !== "" && (
 
                         <View style={styles.vaxInfoView}>
-                            <View style={styles.vaxInfoIcon}>
+                            <View style={[styles.vaxInfoIcon,{paddingTop : 8}]}>
                                 <Icon
                                     name="syringe"
-                                    color="#01691d"
-                                    size={25}
+                                    color="#28c3f7"
+                                    size={40}
+                                    style={{transform : [{rotate : '135deg'}]}}
                                 />
                             </View>
                             <View style={styles.vaxInfoText}>
-                                <Text style={[styles.vaxh1Text,styles.addTextMargin]}>Dose 1</Text>
-                                <Text style={styles.vaxh3Text}>{benificiary.vaccine}</Text>
-                                <Text style={styles.vaxh3Text}>{benificiary.dose1_date}</Text>
+                                <Text style={[styles.h2BlueText]}>Dose 1 | {benificiary.vaccine}</Text>
+                                <Text style={styles.h3}>{benificiary.dose1_date}</Text>
                                 <InfoAlert message="To download the Vaccination Certificate, please visit the CoWIN Portal"/>
                             </View>
                         </View>
@@ -182,14 +185,15 @@ class BenificiaryCard extends React.PureComponent {
                             <View style={styles.vaxInfoIcon}>
                                 <Icon
                                     name="syringe"
-                                    color="#01691d"
-                                    size={30}
+                                    color="#28c3f7"
+                                    size={40}
+                                    style={{transform : [{rotate : '135deg'}]}}
                                 />
                             </View>
                             <View style={styles.vaxInfoText}>
-                                <Text style={[styles.vaxh1Text,styles.addTextMargin]}>Dose 1</Text>
-                                <Text style={styles.vaxh3Text}>{benificiary.vaccine}</Text>
-                                <Text style={styles.vaxh3Text}>{benificiary.dose2_date}</Text>
+                            <Text style={[styles.h2BlueText]}>Dose 2 | {benificiary.vaccine}</Text>
+                                <Text style={styles.h3}>{benificiary.dose2_date}</Text>
+                                <InfoAlert message="To download the Vaccination Certificate, please visit the CoWIN Portal"/>
                             </View>
                         </View>
                     )
@@ -286,15 +290,23 @@ function ListEmptyCard() {
 }
 
 
-export default function BenificiaryList({navigation}) {
+export default function BenificiaryList({route,navigation}) {
     const [benificiary,setBenificiary] = useState([])
     const [loading,setLoading] = useState(false)
+    const [addHomeButton,setAddHomeButton] = useState(false)
     //const {state : {accessToken},isTokenValid} = useContext(AuthContext)
     const authValue = useContext(AuthContext)
     const userValue = useContext(UserContext)
     const {state : {accessToken}, isTokenValid} = authValue
     const {stateSetters} = userValue
 
+
+    useFocusEffect(
+        useCallback(()=> {
+            const homeButtonVal = route && route.params && route.params.addHomeButton || false
+            setAddHomeButton(homeButtonVal)
+        },[benificiary]),
+    )
 
     useEffect(() => {
         if(!isTokenValid()) 
@@ -340,6 +352,23 @@ export default function BenificiaryList({navigation}) {
                     />
                 )
             }
+            {!loading && addHomeButton && (
+                <Button
+                    title="Go Back"
+                    titleStyle={{marginLeft : 10}}
+                    buttonStyle={{
+                        marginTop : 2
+                    }}
+                    type="clear"
+                    icon={<Icon2
+                        name="keyboard-backspace"
+                        size={18}
+                        color="#007bff"
+                    />}
+                    onPress={() => navigation.navigate('Account Details')}
+                />
+
+            )}
             
         </View>
     )

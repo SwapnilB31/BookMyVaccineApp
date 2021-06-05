@@ -2,8 +2,11 @@ import React from 'react'
 import {TouchableOpacity} from 'react-native'
 import Icon from 'react-native-vector-icons/Ionicons'
 import {NavigationContainer} from '@react-navigation/native'
-import {createStackNavigator} from "@react-navigation/stack"
+import {createStackNavigator} from '@react-navigation/stack'
+import CenterInfoProvider from '../contexts/CenterInfoProvider'
 import VaccineSlots from '../pages/VaccineSlots'
+import BookAppointment from '../pages/BookAppointment'
+import SignInProgress from '../pages/SignInProgress'
 
 const Stack = createStackNavigator()
 
@@ -30,6 +33,8 @@ export default function AppointmentNavigator({navigation}) {
                     )
                 }}
             />
+            <Stack.Screen name="SignIn Progress" component={SignInProgress} options={{title : "Signing In"}}/>
+            <Stack.Screen name="Book Appointment" component={BookAppointment}/>
         </Stack.Navigator>
     )
 }

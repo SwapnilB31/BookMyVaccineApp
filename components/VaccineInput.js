@@ -114,11 +114,11 @@ export default function VaccineInput({style,state,dispatch}) {
                     />    
                 </View>
                 <View style={styles.modalActionBar}>
-                    <Button
+                    {/*<Button
                         containerStyle={{width : 70}}
                         type="outline"
                         icon={<Icon name="search" color="#0ca0f0" size={18}/>}
-                    />
+                    />*/}
                 </View>
             </Overlay>
         </View>

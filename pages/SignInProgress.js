@@ -32,15 +32,18 @@ export default function SignInProgress({route, navigation}) {
     const [visible,setVisible] = useState(true)
     const {state : {accessToken,loginAttempt,loginError,smsWaiting}, login,isTokenValid} = useContext(AuthContext)
 
+   //console.log({params : route.params}) 
+
     const forceSignIn = route && route.params && route.params.forceSignIn || false
     const inputMobileNumber = route && route.params && route.params.inputMobileNumber || null 
     const destScreen = route.params.destScreen
 
     useEffect(() => {
-        console.log({destScreen})
+        console.log({destScreen}) 
         if(isTokenValid() && !forceSignIn)
             navigation.navigate(destScreen)
         else {
+            //console.log({inputMobileNumber})
             if(inputMobileNumber)
                 login({inputMobileNumber})
             else

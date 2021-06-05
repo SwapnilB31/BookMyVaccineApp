@@ -35,7 +35,26 @@ export default function AccountNavigator({navigation}) {
                 />
                 <Stack.Screen name="Set/Update Mobile Number" component={EnterMobile}/>
                 <Stack.Screen name="Signing In" component={SignInProgress}/>
-                <Stack.Screen name="Benificiary List" component={BenificiaryList}/>
+                <Stack.Screen 
+                    name="Benificiary List" 
+                    component={BenificiaryList}
+                    options={{
+                        headerLeft : () => (
+                            <TouchableOpacity
+                                onPress={() => {navigation.navigate("Account",{screen : "Account Details"})}}
+                                style={{
+                                    marginLeft : 10
+                                }}
+                            >
+                                <Icon
+                                    name="arrow-back"
+                                    color="#444"
+                                    size={30}
+                                />
+                            </TouchableOpacity>
+                        )
+                    }}    
+                />
             </Stack.Navigator>
     )
-}
+} 

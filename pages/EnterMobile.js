@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
 
 export default function EnterMobile({navigation}) {
     const {login} = useContext(AuthContext)
-    const {state : {mobileNumber}} = useContext(UserContext)
+    const {state : {mobileNumber, benificiaryId}} = useContext(UserContext)
 
     const [mobile,setMobile] = useState('')
     const [error,setError] = useState('')
@@ -52,7 +52,7 @@ export default function EnterMobile({navigation}) {
         if(mobile.length !== 10) {
             setError('Enter a valid mobile Number')
         }
-        else if(mobileNumber === mobile) {
+        else if(mobileNumber === mobile && benificiaryId !== null) {
             setError('This is number is already linked to your account')
         }
         else {

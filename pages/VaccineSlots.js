@@ -1,14 +1,13 @@
 import React, {useState, useReducer, useEffect} from 'react'
-import {View, Text, FlatList, ScrollView, StyleSheet, Dimensions, ActivityIndicator, TouchableOpacity} from 'react-native'
+import {View, Text, FlatList, ScrollView, StyleSheet, Dimensions, ActivityIndicator, TouchableOpacity, RefreshControl} from 'react-native'
 import {Picker} from '@react-native-picker/picker'
-import CustomDatePicker from '../components/CustomDatePicker'
-import HeaderComponent from '../components/HeaderComponent'
 import uuid from 'react-native-uuid'
 import {Button, Tooltip} from 'react-native-elements'
-import stateList from '../data/stateList.js'
-import districtList from '../data/districtList.js'
 import VaccineInput from '../components/VaccineInput'
 import {actions, vaccineInputInitState, vaccineInputReducer} from '../stores/VaccineInputStore'
+import {actions as centerActions} from '../stores/CenterInfoStore'
+import {UserContext} from '../contexts/UserProvider'
+import {CenterInfoContext} from '../contexts/CenterInfoProvider'
 
 
 const styles = StyleSheet.create({
@@ -53,19 +52,11 @@ const styles = StyleSheet.create({
         justifyContent : "center"
     },
     date : {
-        flex : 0.25,
         marginHorizontal: 2,
         color : "#333",
         width : '100%',
         alignItems : "center",
         justifyContent : "center"
-    },
-    infoView : {
-        flex : 1,
-        justifyContent : "flex-start",
-        flexDirection : "row",
-        marginBottom : 3,
-
     },
     age : {
         padding : 7,
@@ -74,6 +65,27 @@ const styles = StyleSheet.create({
         backgroundColor : "#444",
         fontWeight : "bold",
         borderRadius : 7
+    },
+    vaccine : {
+        color : '#00008b',
+        fontWeight : "bold",
+        fontSize: 12,
+        textAlign: "center",
+        justifyContent : "center",
+        alignItems : "center"
+    },
+    flex1by3 : {
+        flex : 0.3
+    },
+    flex1by4 : {
+        flex : 0.25
+    },
+    infoView : {
+        flex : 1,
+        justifyContent : "flex-start",
+        flexDirection : "row",
+        marginBottom : 3,
+
     },
     feeType : {
         padding : 7,
@@ -91,18 +103,6 @@ const styles = StyleSheet.create({
         backgroundColor : "#01691d",
         fontWeight : "bold",
         borderRadius : 7
-    },
-    vaccine : {
-        color : '#00008b',
-        fontWeight : "bold",
-        fontSize: 12,
-        textAlign: "center",
-        flex: 0.25,
-        justifyContent : "center",
-        alignItems : "center"
-    },
-    bookButton : {
-        flex : 0.25,
     },
     listView : {
         maxHeight : Dimensions.get("window").height
@@ -156,7 +156,6 @@ const styles = StyleSheet.create({
 
 const doseStyles = StyleSheet.create({
     doseContainer: {
-        flex : 0.25,
         flexDirection: "column",
         width : '70%'
     },
@@ -173,7 +172,7 @@ const doseStyles = StyleSheet.create({
 })
 
 function openSlotsStyle(capacity) {
-    const color = capacity > 10 ? 'lime' : capacity > 0 ? 'gold' : 'orangered'
+    const color = capacity > 10 ? '#027a3e' : capacity > 0 ? '#cfaf13' : '#c20c0c'
 
     return {
         textAlign: "center",
@@ -185,11 +184,26 @@ function openSlotsStyle(capacity) {
 class CenterCard extends React.PureComponent {
     constructor(props) {
         super(props)
+        
     }
 
     render() {
         const centerObj = this.props.centerObj
 
+        const centerId = centerObj.center_id
+        const centerAddress = `${centerObj.address}, ${centerObj.block_name}, ${centerObj.district_name}, ${centerObj.district_name}, PIN Code: ${centerObj.pincode}`
+        const centerName = centerObj.name
+        const time = `${centerObj.from.slice(0,-3)} - ${centerObj.to.slice(0,-3)}`
+        const feeType = centerObj.fee_type
+        const vaccineFees = centerObj.vaccine_fees
+        const infoObject = {centerId,centerAddress,centerName,time,feeType,vaccineFees}
+
+        let sessionsObj = centerObj.sessions
+        if(this.props.filterAge === 18)
+            sessionsObj = sessionsObj.filter(session => session.min_age_limit === 18)
+        if(this.props.filterAge === 45)
+            sessionsObj = sessionsObj.filter(session => session.min_age_limit === 45)
+        
         return (
             <View style={styles.card}>
                 <Text style={styles.header}>{centerObj.name}</Text>
@@ -207,8 +221,8 @@ class CenterCard extends React.PureComponent {
                     )
                 }
                 <FlatList
-                    data={centerObj.sessions}
-                    renderItem={({item}) => <SlotCard slotObj={item}/>}                
+                    data={sessionsObj}
+                    renderItem={({item}) => <SlotCard slotObj={item} centerInfo={infoObject} navigation={this.props.navigation}/>}                
                     keyExtractor={item => item.session_id}
                 />
             </View>
@@ -219,9 +233,12 @@ class CenterCard extends React.PureComponent {
 class SlotCard extends React.PureComponent {
     constructor(props) {
         super(props)
+        this.renderGuest = this.renderGuest.bind(this)
+        this.renderSignedIn = this.renderSignedIn.bind(this)
+        this.goToBookAppointment = this.goToBookAppointment.bind(this)
     }
 
-    render() {
+    renderGuest() {
         const slotObj = this.props.slotObj
 
         return (
@@ -230,9 +247,9 @@ class SlotCard extends React.PureComponent {
                     <Text style={styles.age}>{`${slotObj.min_age_limit}+`}</Text>
                 </View>
                 <View style={styles.slotBar}>
-                    <Text style={styles.date}>{slotObj.date}</Text>
-                    <Text style={styles.vaccine}>{slotObj.vaccine}</Text>
-                    <View style={doseStyles.doseContainer}>
+                    <Text style={[styles.date,styles.flex1by3]}>{slotObj.date}</Text>
+                    <Text style={[styles.vaccine,styles.flex1by3]}>{slotObj.vaccine}</Text>
+                    <View style={[doseStyles.doseContainer,styles.flex1by3]}>
                         <View style={[doseStyles.doseRow, styles.addBorderBottom]}>
                             <Text style={doseStyles.doseLabel}>Dose 1: </Text>
                             <Text style={openSlotsStyle(slotObj.available_capacity_dose1)}>{slotObj.available_capacity_dose1}</Text>
@@ -242,60 +259,101 @@ class SlotCard extends React.PureComponent {
                             <Text style={openSlotsStyle(slotObj.available_capacity_dose2)}>{slotObj.available_capacity_dose2}</Text>
                         </View>                    
                     </View>
+                </View>    
+            </View>
+        )
+    }
+
+    /**
+     * 
+     * @param {React.Dispatch<{type: string;payload: any;}>} dispatch 
+     */
+    goToBookAppointment(dispatch) {
+        const infoObject = this.props.centerInfo
+        const navigation = this.props.navigation
+        const slotObj = this.props.slotObj
+
+        const sessionId = slotObj.session_id
+        const date = slotObj.date
+        const slots = slotObj.slots
+        const vaccine = slotObj.vaccine 
+
+        dispatch({type : centerActions.setCenterId, payload : infoObject.centerId})
+        dispatch({type : centerActions.setCenterName, payload : infoObject.centerName})
+        dispatch({type : centerActions.setCenterAdress, payload: infoObject.centerAddress})
+        dispatch({type : centerActions.setCenterFeeType, payload: infoObject.feeType})
+        dispatch({type : centerActions.setCenterVaccineFees, payload: infoObject.vaccineFees})
+        dispatch({type : centerActions.setCenterTime, payload : infoObject.time})
+        dispatch({type : centerActions.setSessionId, payload : slotObj.session_id})
+        dispatch({type : centerActions.setSessionDate, payload : slotObj.date})
+        dispatch({type : centerActions.setSessionVaccine, payload : slotObj.vaccine})
+        dispatch({type : centerActions.setSessionSlots, payload : slotObj.slots})
+        dispatch({type : centerActions.setSessionMinAgeLimit, payload : slotObj.min_age_limit})
+
+        navigation.navigate("Book Appointment")
+    }
+
+    renderSignedIn(CenterInfoValue, UserValue) {
+        const slotObj = this.props.slotObj
+        const dispatch = CenterInfoValue.dispatch
+        const {state: {dose}} = UserValue
+        return (
+            <View >
+                <View style={styles.infoView}>
+                    <Text style={styles.age}>{`${slotObj.min_age_limit}+`}</Text>
+                </View>
+                <View style={styles.slotBar}>
+                    <Text style={[styles.date,styles.flex1by4]}>{slotObj.date}</Text>
+                    <Text style={[styles.vaccine,styles.flex1by4]}>{slotObj.vaccine}</Text>
+                    <Text style={[openSlotsStyle(dose === 1 ? slotObj.available_capacity_dose1 : slotObj.available_capacity_dose2),styles.flex1by4]}>
+                        { dose === 1 ? slotObj.available_capacity_dose1 : slotObj.available_capacity_dose2}
+                    </Text>
                     <Button
                         type="clear"
                         title="Book"
-                        disabled={slotObj.available_capacity <= 0}
-                        containerStyle={styles.bookButton}
+                        disabled={dose === 1 ? slotObj.available_capacity_dose1 <= 0 : slotObj.available_capacity_dose2 <= 0}
+                        containerStyle={styles.flex1by4}
+                        onPress={() => this.goToBookAppointment(dispatch)}
                     />
                 </View>    
             </View>
-    
         )
+    }
+
+    render() {
+        return (
+            <UserContext.Consumer>
+            { 
+                UserValue => (
+                    <CenterInfoContext.Consumer>
+                    {
+                        CenterInfoValue => (
+                            UserValue.state.benificiaryId === null ? this.renderGuest() : this.renderSignedIn(CenterInfoValue,UserValue)
+                        )
+                    }
+                    </CenterInfoContext.Consumer>
+                )   
+
+            }
+            </UserContext.Consumer>
+        )    
     }
 }
 
-function StatePicker({setStateId}) {
-    return (
-        <View style={styles.picker}>
-            <Picker
-                onValueChange={(itemValue, itemIndex) => setStateId(itemValue)}
-            >
-                <Picker.Item value={0} label="Pick a State"/>
-                {
-                    stateList.map(val => (
-                        <Picker.Item value={val.state_id} label={val.state_name} key={uuid.v4()}/>
-                    ))
-                }
-            </Picker>
-        </View>
-    )
-}
+/**
+ * 
+ * @param {[]} center 
+ * @returns 
+ */
 
-function DistrictPicker({stateId,setDistrictId}) {
-    if(stateId == 0)
-        return (
-            <View style={[styles.picker,styles.addMarginBottom]}>
-                <Picker>
-                    <Picker.Item value={0} label="Select a state first"/>
-                </Picker>
-            </View>
-                    )
-    else
-    return (
-        <View style={[styles.picker,styles.addMarginBottom]}>
-            <Picker
-                onValueChange={(itemValue,itemIndex) => setDistrictId(itemValue)}
-            >
-                <Picker.Item value={0} label="Select District"/>
-                {
-                    districtList[stateId].map(val => (
-                        <Picker.Item value={val.district_id} label={val.district_name} key={uuid.v4()}/>
-                    ))
-                }
-            </Picker>
-        </View>
-    )
+function filter18PlusCenters(center) { return center.sessions.some(val => val.min_age_limit === 18)}
+
+function filter45PlusCenters(center) { return center.sessions.some(val => val.min_age_limit === 45) }
+
+
+function filterNone(center) {
+    //console.log("running filter none")
+    return true
 }
 
 function VaccineSlots({navigation}) {
@@ -305,13 +363,22 @@ function VaccineSlots({navigation}) {
     const [state,dispatch] = useReducer(vaccineInputReducer,vaccineInputInitState)
     
     const [loading,setLoading] = useState(false) 
-    useEffect(()=>{
-        if(state.districtId === 0) return
 
-        //console.log(`Inside Useeffect, Did : ${distrctId} `)
+    function runFilters() {
+        //console.log("run filters")
+        if(!state._18PlusMode && !state._45PlusMode)
+            dispatch({type : actions.setCenters, payload : state.centersStatic.filter(filterNone)})
+        else if(state._18PlusMode && !state._45PlusMode)
+            dispatch({type : actions.setCenters, payload : state.centersStatic.filter(filter18PlusCenters)})
+        else if(state._45PlusMode && !state._18PlusMode)
+            dispatch({type : actions.setCenters, payload : state.centersStatic.filter(filter45PlusCenters)})
+    }
 
+    function fetchCenterData() {
         //const url = 'https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByDistrict?district_id=49&date=18-05-2021'
-        const url = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByDistrict?district_id=${state.districtId}&date=${dateToStr(state.date)}`
+        const url = state.pinCodeMode && state.pinCode.length == 6 ? `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?pincode=${state.pinCode}&date=${dateToStr(state.date)}` 
+                                                                    : `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByDistrict?district_id=${state.districtId}&date=${dateToStr(state.date)}`
+
         //console.log(url)
         setLoading(true)
         fetch(url,{
@@ -325,16 +392,48 @@ function VaccineSlots({navigation}) {
         .then(data => {
             setLoading(false)
             //setCenters(data.centers);
-            dispatch({type : actions.setCenters, payload : data.centers})
+            if(data.errCode)
+            {
+                dispatch({type : actions.setCentersStatic, payload : []})
+                dispatch({type : actions.setCenters, payload : []})
+                alert(data.error)
+            }
+            else {
+                let filterFunc
+                if(!state._18PlusMode && !state._45PlusMode)
+                    filterFunc = filterNone
+                else if(state._18PlusMode && !state._45PlusMode)
+                    filterFunc = filter18PlusCenters
+                else if(state._45PlusMode && !state._18PlusMode)
+                    filterFunc = filter45PlusCenters
+                dispatch({type : actions.setCentersStatic, payload : data.centers})
+                dispatch({type : actions.setCenters, payload : data.centers.filter(filterFunc)})
+            }
+            //dispatch({type : actions.setCenters, payload: data.centers})
         })
         .catch(err => {
             setLoading(false)
             //setCenters([])
-            dispatch({type : actions.setCenters, payload : []})
+            dispatch({type : actions.setCentersStatic, payload : []})
             alert('Data Fetching Failed!')
         })
+    }
 
-    },[state.districtId, state.date])
+    useEffect(()=>{
+        console.log("Use Effect Triggered")
+        console.log({districtId : state.districtId, date : state.date, pinCodeMode : state.pinCodeMode, pinCode : state.pinCode})
+        if(state.districtId === 0) return
+        if(state.pinCodeMode && state.pinCode.length != 6) return
+
+        //console.log(`Inside Useeffect, Did : ${distrctId} `)
+        fetchCenterData()
+
+    },[state.districtId, state.date, state.pinCodeMode, state.pinCode])
+
+    useEffect(()=>{
+        runFilters()
+    },[state._18PlusMode,state._45PlusMode]) 
+
 
     return (
             <View style={styles.container}>
@@ -373,8 +472,21 @@ function VaccineSlots({navigation}) {
                         <FlatList 
                             style={styles.listView}
                             data={state.centers}
-                            renderItem={({item}) => <CenterCard centerObj={item}/>}
+                            renderItem={({item}) => <CenterCard 
+                                                        centerObj={item} 
+                                                        navigation={navigation}
+                                                        filterAge={!state._18PlusMode && !state._45PlusMode ? 0 : state._18PlusMode ? 18 : 45}
+                                                    />}
                             keyExtractor={item => item.center_id}
+                            refreshControl={
+                            <RefreshControl
+                                refreshing={loading}
+                                onRefresh={fetchCenterData}
+                                colors={["#444"]}
+                                progressBackgroundColor="#fff"
+                                progressViewOffset={5}
+
+                            />}
                         />
                     )
                 }

@@ -1,6 +1,7 @@
 import React, {useReducer} from 'react'
 
 export const actions = Object.freeze({
+    setCentersStatic : 'setCentersStatic',
     setCenters : 'setCenters',
     setStateId : 'setStateId',
     setDistrictId : 'setDistrictId',
@@ -31,6 +32,8 @@ export const actions = Object.freeze({
 export function vaccineInputReducer(state,action) {
     //console.log({state,action})
     switch(action.type) {
+        case actions.setCentersStatic:
+            return {...state, centersStatic : action.payload}
         case actions.setCenters:
             return {...state, centers : action.payload}
         case actions.setStateId:
@@ -101,6 +104,7 @@ export function vaccineInputReducer(state,action) {
 }
 
 export const vaccineInputInitState = Object.freeze({
+    centersStatic : [],
     centers : [],
     stateId : 0,
     districtId : 0,

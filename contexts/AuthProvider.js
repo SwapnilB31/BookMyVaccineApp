@@ -13,7 +13,9 @@ export default function AuthProvider({children}) {
     const [loginAttempt,setLoginAttempt] = useState(false)
     const [loginError,setLoginError] = useState(false)
     const [smsWaiting,setSmsWaiting] = useState(false)
-    const { state : {mobileNumber}, stateSetters : {setBenificiaryId,setBenificiaryName,setMobileNumber}} = useContext(UserContext)
+    const { state : {mobileNumber}, stateSetters : {setBenificiaryId,setBenificiaryName,setMobileNumber}, resetUserStore} = useContext(UserContext)
+
+
     
     useEffect(() => {
         AsyncStorage.getItem('inMemoryAccessToken',(error,result) => {
@@ -25,20 +27,27 @@ export default function AuthProvider({children}) {
     },[])
     
     function login({inputMobileNumber}) {
-        if(mobileNumber === null) {
+        /*if(mobileNumber === null) {
             setLoginError(true)
             return
-        }
+        }*/
         const mobileNumVal = inputMobileNumber || mobileNumber
         setAllAccessTokens(null)
         setLoginAttempt(false)
         setLoginError(false)
         setSmsWaiting(false)
         loginMethod(mobileNumVal,setAllAccessTokens,setLoginAttempt,setLoginError,setSmsWaiting,setMobileNumber)
-        setTimeout(()=> {
+        /*setTimeout(()=> {
             if(accessToken === null)
                 setLoginError(true)
-        },3 * 60 * 1000) 
+        },3 * 60 * 1000) */
+    }
+
+    function logout() {
+        AsyncStorage.removeItem('inMemoryAccessToken',err => {
+            resetUserStore()
+            setAccessToken(null)
+        })
     }
 
     function isTokenValid() {
@@ -59,7 +68,7 @@ export default function AuthProvider({children}) {
     }
 
     const state = {accessToken,loginAttempt,loginError,smsWaiting}
-    const value = {state,login,isTokenValid}
+    const value = {state,login,logout,isTokenValid}
     
     return (
         <AuthContext.Provider value={value}>
@@ -132,6 +141,7 @@ async function loginMethod(mobileNumber,setAccessToken,setLoginAttempt,setLoginE
             console.log("Recieving OTP...")
 
             const {token} = await res1.json()
+            timeOut(300)
             setAccessToken({token : token, issuedAt : Date.now()})
             await setMobileNumber(mobileNumber)
             setLoginAttempt(false)
