@@ -422,9 +422,9 @@ function VaccineSlots({navigation}) {
     useEffect(()=>{
         console.log("Use Effect Triggered")
         console.log({districtId : state.districtId, date : state.date, pinCodeMode : state.pinCodeMode, pinCode : state.pinCode})
-        if(state.districtId === 0) return
-        if(state.pinCodeMode && state.pinCode.length != 6) return
-
+        if(!state.pinCodeMode && state.districtId === 0) return
+        if(state.pinCodeMode && state.pinCode.length !== 6) return
+        
         //console.log(`Inside Useeffect, Did : ${distrctId} `)
         fetchCenterData()
 

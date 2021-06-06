@@ -12,7 +12,7 @@ const Stack = createStackNavigator()
 
 export default function AppointmentNavigator({navigation}) {
     return (
-        <Stack.Navigator initialRouteName="Find Vaccination Centers">
+        <Stack.Navigator initialRouteName="Find Vaccination Centers" screenOptions={{headerShown : false}}>
             <Stack.Screen 
                 name="Find Vaccination Centers"
                 component={VaccineSlots}

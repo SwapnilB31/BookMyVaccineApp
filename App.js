@@ -6,6 +6,8 @@ import PingAddress from './pages/PingAddress'
 import AccountNavigator from './navigators/AccountNavigator'
 import AppointmentNavigator from './navigators/AppointmentNavigator'
 import BookAppointment from './pages/BookAppointment'
+import TestNotification from './pages/TestNotification'
+import ShowCowinPortal from './pages/ShowCowinPortal'
 import { View, StyleSheet, Button, Text} from 'react-native'
 import {createDrawerNavigator} from '@react-navigation/drawer'
 import {NavigationContainer} from '@react-navigation/native'
@@ -44,6 +46,8 @@ export default function App() {
               <Drawer.Screen name="Appointments" component={AppointmentNavigator}/>
               <Drawer.Screen name="Read SMS" component={ReadSMS}/>
               <Drawer.Screen name="Account" component={AccountNavigator}/>
+              <Drawer.Screen name="Test Notification" component={TestNotification}/>
+              <Drawer.Screen name="Go to CoWIN" component={ShowCowinPortal}/>
             </Drawer.Navigator>
           </NavigationContainer>
         </CenterInfoProvider>
