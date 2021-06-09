@@ -139,9 +139,9 @@ function CustomDatePicker({style, date, onDateChange, leftIcon}) {
     if(date === null) 
         return `---Pick a Date---`
     let day = date.getDate()
-    day = day > 10 ? day : `0${day}`
+    day = day > 9 ? day : `0${day}`
     let month = date.getMonth() + 1
-    month = month > 10 ? month : `0${month}`
+    month = month > 9 ? month : `0${month}`
     const year = date.getFullYear()
 
     return `${day}-${month}-${year}`

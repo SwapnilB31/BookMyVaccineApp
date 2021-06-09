@@ -15,7 +15,7 @@ const actions = Object.freeze({
     RESET : 'reset'
 })
 
-const storageKeys = Object.freeze({
+export const storageKeys = Object.freeze({
     mobileNumber : 'mobileNumber',
     age : 'age',
     benificiaryId : 'benificiaryId',
@@ -142,55 +142,55 @@ export default function UserProvider({children}) {
     }, [])
 
     async function setMobileNumber(mobileNumber) {
-        console.log({mobileNumber})
+        //console.log({mobileNumber})
         dispatch({type : actions.SET_MOBILE_NUMBER, payload : mobileNumber})
         await AsyncStorage.setItem(storageKeys.mobileNumber,mobileNumber)
         return true
     }
 
     async function setAge(age) {
-        console.log({age})
+        //console.log({age})
         dispatch({type : actions.SET_AGE, payload : Number(age)})
         await AsyncStorage.setItem(storageKeys.age,age.toString())
         return true
     }
 
     async function setBenificiaryId(benificiaryId) {
-        console.log({benificiaryId})
+        //console.log({benificiaryId})
         dispatch({type : actions.SET_BENIFICIARY_ID, payload : benificiaryId})
         await AsyncStorage.setItem(storageKeys.benificiaryId,benificiaryId)
         return true
     }
 
     async function setBenificiaryName(benificiaryName) {
-        console.log({benificiaryName})
+        //console.log({benificiaryName})
         dispatch({type : actions.SET_BENIFICIARY_NAME, payload : benificiaryName})
         await AsyncStorage.setItem(storageKeys.benificiaryName,benificiaryName)
         return true
     }
 
     async function setDose(dose) {
-        console.log({dose})
+        //console.log({dose})
         dispatch({type : actions.SET_DOSE, payload : dose})
         await AsyncStorage.setItem(storageKeys.dose,dose.toString())
     }
 
     async function setYearOfBirth(yearOfBirth) {
-        console.log({yearOfBirth})
+        //console.log({yearOfBirth})
         dispatch({type : actions.SET_YEAR_OF_BIRTH, payload : Number(yearOfBirth)})
         await AsyncStorage.setItem(storageKeys.yearOfBirth,yearOfBirth)
         return true
     }
 
     async function setIdType(id_type) {
-        console.log({id_type})
+        //console.log({id_type})
         dispatch({type : actions.SET_ID_TYPE, payload : id_type})
         await AsyncStorage.setItem(storageKeys.idType,id_type)
         return true
     }
 
     async function setIdNumber(idNumber) {
-        console.log({idNumber})
+        //console.log({idNumber})
         dispatch({type : actions.SET_ID_NUMBER, payload : idNumber})
         await AsyncStorage.setItem(storageKeys.idNumber,idNumber)
         return true

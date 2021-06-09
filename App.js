@@ -1,19 +1,17 @@
 import 'react-native-gesture-handler'
 import React, {useState} from 'react'
-import UserDetails from './pages/UserDetails'
-import ReadSMS from './pages/ReadSMS'
-import PingAddress from './pages/PingAddress'
 import AccountNavigator from './navigators/AccountNavigator'
 import AppointmentNavigator from './navigators/AppointmentNavigator'
-import BookAppointment from './pages/BookAppointment'
-import TestNotification from './pages/TestNotification'
-import ShowCowinPortal from './pages/ShowCowinPortal'
+import Alerts from './pages/Alerts'
+import DrawerContent from './components/DrawerContent'
+import Settings from './pages/Settings'
 import { View, StyleSheet, Button, Text} from 'react-native'
 import {createDrawerNavigator} from '@react-navigation/drawer'
 import {NavigationContainer} from '@react-navigation/native'
 import AuthProvider from './contexts/AuthProvider'
 import UserProvider from './contexts/UserProvider'
 import CenterInfoProvider from './contexts/CenterInfoProvider'
+import PreferenceProvider from './contexts/PreferenceProvider'
 
 function Home({navigator}) {
   return (
@@ -38,20 +36,20 @@ export default function App() {
   
   return (
     <UserProvider>
-      <AuthProvider>
-        <CenterInfoProvider>
-          <NavigationContainer>
-            <Drawer.Navigator initialRouteName="Home">
-              <Drawer.Screen name="Home" component={Home}/>
-              <Drawer.Screen name="Appointments" component={AppointmentNavigator}/>
-              <Drawer.Screen name="Read SMS" component={ReadSMS}/>
-              <Drawer.Screen name="Account" component={AccountNavigator}/>
-              <Drawer.Screen name="Test Notification" component={TestNotification}/>
-              <Drawer.Screen name="Go to CoWIN" component={ShowCowinPortal}/>
-            </Drawer.Navigator>
-          </NavigationContainer>
-        </CenterInfoProvider>
-      </AuthProvider>
+      <PreferenceProvider>
+        <AuthProvider>
+          <CenterInfoProvider>
+            <NavigationContainer>
+              <Drawer.Navigator initialRouteName="Appointments" drawerContent={(props) => <DrawerContent {...props}/>} screenOptions={{swipeEnabled : false}}>
+                <Drawer.Screen name="Appointments" component={AppointmentNavigator}/>
+                <Drawer.Screen name="Alerts" component={Alerts}/>
+                <Drawer.Screen name="Account" component={AccountNavigator}/>
+                <Drawer.Screen name="Settings" component={Settings}/>
+              </Drawer.Navigator>
+            </NavigationContainer>
+          </CenterInfoProvider>
+        </AuthProvider>
+      </PreferenceProvider>
     </UserProvider>
   )
 }

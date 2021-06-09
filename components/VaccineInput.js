@@ -1,5 +1,6 @@
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useState, useContext,useCallback} from 'react'
 import {View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput} from 'react-native'
+import {useFocusEffect} from '@react-navigation/native'
 import {Picker} from '@react-native-picker/picker'
 import {Overlay,Button,Switch} from 'react-native-elements'
 import CustomDatePicker from './CustomDatePicker'
@@ -8,6 +9,7 @@ import stateList from '../data/stateList.js'
 import districtList from '../data/districtList.js'
 import Icon from 'react-native-vector-icons/Ionicons'
 import uuid from 'react-native-uuid'
+import {PreferenceContext} from '../contexts/PreferenceProvider'
 
 /**
  * 
@@ -16,18 +18,74 @@ import uuid from 'react-native-uuid'
  * @param {React.Dispatch<{type: string;payload: any;}>} param.dispatch
  * @param {StyleSheet} param.style
  */
-export default function VaccineInput({style,state,dispatch}) {
+export default function VaccineInput({style,state,dispatch,prefStatus}) {
     const [stateName,setStateName] = useState('Not Selected')
     const [districtName,setDistrictName] = useState('Not Selected')
     const [visible,setVisible] = useState(false)
-    const {date, districtId, stateId, pinCodeMode, pinCode, _18PlusMode, _45PlusMode} = state 
+    const [rendering,setRendering] = useState(true)
+    const {prefLoading,setPrefLoading} = prefStatus
+    const {date, districtId, stateId, pinCodeMode, pinCode, _18PlusMode, _45PlusMode, onlyOpenSlots} = state 
+
+    const {state : prefState} = useContext(PreferenceContext)
+
+    function fetchSearchPreferences() {
+        //Set the PIN Code Mode
+        dispatch({type : actions.setPinCodeMode, payload :  prefState.pinCodeMode})
+        //Find the state name from stateId
+        if(prefState.stateId !== 0) {
+            const stName = stateList.find(state => state.state_id === prefState.stateId).state_name 
+            //Set state name and stateId
+            setStateName(stName)
+            dispatch({type : actions.setStateId, payload : prefState.stateId})
+        }
+        if(prefState.stateId !== 0 && prefState.districtId !== 0) {
+            const hasDist = districtList[prefState.stateId].find(district => district.district_id === prefState.districtId)
+            //console.log({distName}) 
+            if(hasDist !== undefined) {
+                setDistrictName(hasDist.district_name)
+                dispatch({type : actions.setDistrictId, payload : prefState.districtId})
+            }
+            else {
+                setDistrictName('Not Selected')
+            }
+        }
+        else {
+            setDistrictName('Not Selected')
+        }
+        //console.log({pinCode : prefState.pinCode})
+        if(prefState.pinCode !== '')
+            dispatch({type : actions.setPinCode, payload : prefState.pinCode})
+        
+        //console.log({ageGroup : prefState.ageGroup})
+        if(prefState.ageGroup === 18)
+            dispatch({type : actions.set18PlusMode, payload : true})
+        
+        if(prefState.ageGroup === 45)
+            dispatch({type : actions.set45PlusMode, payload : true})
+
+        dispatch({type : actions.setOnlyOpenSlots, payload : prefState.openSlotsOnly})
+    }
 
     useEffect(() => {
+        fetchSearchPreferences()
+        setPrefLoading(false)
+    },[])
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchSearchPreferences()
+        },[prefState])
+    )
+
+    useEffect(() => {
+        if(prefLoading) return
         if(stateId === 0)
             return
-        //setDistrictId(0)
-        dispatch({type : actions.setDistrictId, payload : 0})
-        setDistrictName('Not Selected')
+        const stateHasDistrict = districtList[stateId].find(district => district.district_id === districtId) !== undefined
+        if(!stateHasDistrict) {
+            dispatch({type : actions.setDistrictId, payload : 0})
+            setDistrictName('Not Selected') 
+        }
     },[stateId])
 
     return (
@@ -38,11 +96,12 @@ export default function VaccineInput({style,state,dispatch}) {
                     onPress={() => setVisible(true)}
                 >
                     <Text numberOfLines={1} style={[styles.btnText,styles.stdSmallerText]}>
-                        {dateToStr(date)} | {pinCodeMode ? `${pinCode}` : `${stateName.slice(0,16)} | ${districtName.slice(0,16)}`}
+                            {dateToStr(date)} | {pinCodeMode ? `${pinCode}` : `${stateName.slice(0,16)} | ${districtName.length > 16 ? districtName.slice(0,16)+'...' : districtName}`}
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     onPress={() => setVisible(true)}
+                    style={styles.gearIcon}
                 >
                     <Icon name="settings" color="black" size={16}/>
                 </TouchableOpacity>
@@ -90,9 +149,9 @@ export default function VaccineInput({style,state,dispatch}) {
                 {
                     true && (
                         <TextInput
-                            style={[styles.datePicker,styles.stdText]}
+                            style={[styles.datePicker,styles.stdText]} 
                             placeholder="Pincode"
-                            value={pinCode}
+                            value={typeof pinCode === "boolean" ? '' : pinCode}
                             onChangeText={text => {text.length <= 6 && dispatch({type : actions.setPinCode, payload : text})}}
                             keyboardType="numeric"
                             editable={pinCodeMode}
@@ -111,6 +170,13 @@ export default function VaccineInput({style,state,dispatch}) {
                     <Switch
                         value={_45PlusMode}
                         onValueChange={() => dispatch({type : actions.toggle45PlusMode, payload : false})}
+                    />    
+                </View>
+                <View style={styles.switchBox}>
+                    <Text style={styles.stdText}>Open Slots Only</Text>
+                    <Switch
+                        value={onlyOpenSlots}
+                        onValueChange={() => dispatch({type : actions.toggleOnlyOpenSlot, payload : false})}
                     />    
                 </View>
                 <View style={styles.modalActionBar}>
@@ -194,7 +260,7 @@ const styles = StyleSheet.create({
         paddingVertical : 5
     },
     btnText : {
-        fontSize : 10
+        fontSize : 10,
     },
     picker: {
         backgroundColor: "#fff",
@@ -259,16 +325,16 @@ const styles = StyleSheet.create({
     stdSmallerText : {
         textAlign : "left",
         fontSize: 14
-    }
+    },
 })
 
 function dateToStr(date) {
     if(date === null) 
         return `---Pick a Date---`
     let day = date.getDate()
-    day = day > 10 ? day : `0${day}`
+    day = day > 9 ? day : `0${day}`
     let month = date.getMonth() + 1
-    month = month > 10 ? month : `0${month}`
+    month = month > 9 ? month : `0${month}`
     const year = date.getFullYear()
 
     return `${day}-${month}-${year}`

@@ -35,7 +35,11 @@ export default class NotificationManager {
             showWhen: true,
             when : Date.now(),
             //usesChronometer : true,
-
+            vibrate : true,
+            vibration : 1000,
+            visibility : "public",
+            importance : "high", 
+            
             id : parentObj.lastId,
             title : title,
             message : message,
@@ -47,7 +51,7 @@ export default class NotificationManager {
     scheduledNotification(title,message) {
         if(!this.channelCreated)
             return
-        console.log("Triggered schedule notification")
+        //console.log("Triggered schedule notification")
         const parentObj = this
         this.lastId++
 
@@ -57,6 +61,10 @@ export default class NotificationManager {
             invokeApp : false,
             showWhen: true,
             when : Date.now(),
+            vibrate : true,
+            vibration : 1000,
+            visibility : "public",
+            importance : "high", 
             //usesChronometer : true,
 
             id : parentObj.lastId,

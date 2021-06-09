@@ -122,6 +122,22 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems : "center"
+    },
+    infoAlert : {
+        display : "flex",
+        backgroundColor: "#aed9e6",
+        paddingHorizontal: "5%",
+        paddingVertical: 7,
+        borderLeftColor : "#095269",
+        borderLeftWidth : 4,
+        width : "95%",
+        marginVertical: 7,
+        borderRadius : 3,
+        marginLeft : '2.5%'
+    },
+    infoText : {
+        color: "#095269",
+        fontSize : 14
     }
 })
 
@@ -129,9 +145,13 @@ class BenificiaryCard extends React.PureComponent {
     constructor(props) {
         super(props)
         this.handleSelect = this.handleSelect.bind(this)
+        this.state = {
+            loading : false
+        }
     }
 
     async handleSelect() {
+        this.setState({loading : true})
         const {setAge,setBenificiaryId,setBenificiaryName,setDose,setYearOfBirth,setIdType,setIdNumber} = this.props.stateSetters
         const benificiary = this.props.benificiary
         await setAge(new Date().getFullYear() - Number(benificiary.birth_year))
@@ -233,6 +253,7 @@ class BenificiaryCard extends React.PureComponent {
                     <Button 
                         type="clear" 
                         title="SELECT"
+                        loading={this.state.loading}
                         onPress={() => this.handleSelect()}
                     />
                 </View>
@@ -339,7 +360,16 @@ export default function BenificiaryList({route,navigation}) {
                     <Text>Loading...</Text>
                 </View> 
             )}
+            {!loading && 
+                <View style={styles.infoAlert}>
+                    <Text style={styles.infoText}>
+                        Select a benificary from this list as the primary benificary. The details of the selected benificiary will be used in 
+                        booking vaccination appointments. You can change the Primary benificary at any time.</Text>
+                </View>
+
+            }
             {!loading && (
+
                     <FlatList
                         data={benificiary}
                         renderItem={({item}) => <BenificiaryCard 

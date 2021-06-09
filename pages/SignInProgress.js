@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
 
 export default function SignInProgress({route, navigation}) {
     const [visible,setVisible] = useState(true)
-    const {state : {accessToken,loginAttempt,loginError,smsWaiting}, login,isTokenValid} = useContext(AuthContext)
+    const {state : {accessToken,loginAttempt,loginError,smsWaiting,otpSubmitting}, login,isTokenValid} = useContext(AuthContext)
 
    //console.log({params : route.params}) 
 
@@ -39,7 +39,7 @@ export default function SignInProgress({route, navigation}) {
     const destScreen = route.params.destScreen
 
     useEffect(() => {
-        console.log({destScreen}) 
+        //console.log({destScreen}) 
         if(isTokenValid() && !forceSignIn)
             navigation.navigate(destScreen)
         else {
@@ -52,7 +52,7 @@ export default function SignInProgress({route, navigation}) {
     },[])
 
     useEffect(() => {
-        console.log({destScreen})
+        //console.log({destScreen})
         if(!isTokenValid())
             return
         navigation.navigate(destScreen)
@@ -64,11 +64,14 @@ export default function SignInProgress({route, navigation}) {
                 <Text style={styles.headerText}>Signing In...</Text>
                 <Divider style={{height : 1, backgroundColor : "#aaa"}}/>
                 <View style={styles.loadingContainer}>
-                    {loginAttempt && !smsWaiting && (
+                    {loginAttempt && !smsWaiting && !otpSubmitting && (
                         <Text style={styles.messageText}>Requesting OTP...</Text>
                     )}
                     {loginAttempt && smsWaiting && (
                         <Text style={styles.messageText}>Waiting for SMS...</Text>
+                    )}
+                    {loginAttempt && otpSubmitting && !smsWaiting && (
+                        <Text style={styles.messageText}>Submitting OTP...</Text>
                     )}
                     {loginError && (
                         <Text style={styles.messageText}>Something Went wrong...</Text>

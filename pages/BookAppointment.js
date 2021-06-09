@@ -78,7 +78,7 @@ export default function BookAppointment({navigation}) {
             headers : {...headers, 'Authorization' : `Bearer ${accessToken.token}`}
         })
         .then(res => {
-            console.log("Recieved Response")
+            //console.log("Recieved Response")
             return res.json()
         })
         .then(data => {
@@ -88,11 +88,11 @@ export default function BookAppointment({navigation}) {
             setLoadingError(false)
         })
         .catch(err => {
-            console.log(err)
+            //console.log(err)
             setLoadingError(true)
         })
         timer = setTimeout(() => {
-            console.log("Timer Went off")
+            //console.log("Timer Went off")
             if(loading === true)
                 setLoadingError(true)
         },10 * 1000)
@@ -116,7 +116,7 @@ export default function BookAppointment({navigation}) {
 
         if(!err) {
             setSendingBookReq(true)
-            const url = "http://192.168.43.2/api/v2/appointment/schedule"
+            const url = "https://cdn-api.co-vin.in/api/v2/appointment/schedule"
             fetch(url,{
                 method : "POST",
                 body : JSON.stringify({
@@ -150,7 +150,7 @@ export default function BookAppointment({navigation}) {
             })
             .catch(err => {
                 setSendingBookReq(false)
-                console.log(err)
+                //console.log(err)
             })
         }
         

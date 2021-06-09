@@ -23,6 +23,7 @@ import org.unimodules.core.interfaces.SingletonModule;
 
 import com.facebook.react.bridge.JSIModulePackage; // <- add
 import com.swmansion.reanimated.ReanimatedJSIModulePackage; // <- add
+import com.ocetnik.timer.BackgroundTimerPackage;
 
 public class MainApplication extends Application implements ReactApplication {
   private final ReactModuleRegistryProvider mModuleRegistryProvider = new ReactModuleRegistryProvider(new BasePackageList().getPackageList(), null);
@@ -44,6 +45,10 @@ public class MainApplication extends Application implements ReactApplication {
             new ModuleRegistryAdapter(mModuleRegistryProvider)
           );
           packages.addAll(unimodules);
+          /*List<ReactPackage> bgTimer = Arrays.<ReactPackage>asList(
+            new BackgroundTimerPackage()
+          );
+          packages.addAll(bgTimer);*/
           return packages;
         }
 

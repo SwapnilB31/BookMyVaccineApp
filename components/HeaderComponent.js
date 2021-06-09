@@ -23,6 +23,7 @@ export default function HeaderComponent({navigation,title}) {
         <Header
             containerStyle={{
                 backgroundColor : "#fff",
+                marginBottom : 10
             }}
             placement="left"
             leftComponent={<MenuItem navigation={navigation}/>}
@@ -30,11 +31,11 @@ export default function HeaderComponent({navigation,title}) {
                 text: title, 
                 style: { 
                     color: '#444', 
-                    fontWeight : "600", 
-                    fontFamily : "sans-serif-medium", 
+                    fontWeight : "700",
+                    fontFamily : "Roboto", 
                     fontSize : 21, 
                     textAlignVertical : "bottom", 
-                    marginLeft : 10
+                    marginLeft : 10,
                 }
             }}
         >

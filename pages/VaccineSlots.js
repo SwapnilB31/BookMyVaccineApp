@@ -1,4 +1,4 @@
-import React, {useState, useReducer, useEffect} from 'react'
+import React, {useState, useReducer, useEffect, useContext} from 'react'
 import {View, Text, FlatList, ScrollView, StyleSheet, Dimensions, ActivityIndicator, TouchableOpacity, RefreshControl} from 'react-native'
 import {Picker} from '@react-native-picker/picker'
 import uuid from 'react-native-uuid'
@@ -8,7 +8,10 @@ import {actions, vaccineInputInitState, vaccineInputReducer} from '../stores/Vac
 import {actions as centerActions} from '../stores/CenterInfoStore'
 import {UserContext} from '../contexts/UserProvider'
 import {CenterInfoContext} from '../contexts/CenterInfoProvider'
-
+import {AuthContext} from '../contexts/AuthProvider'
+import {headers} from '../data/headers'
+import * as ReadSms from 'react-native-read-sms/ReadSms'
+ 
 
 const styles = StyleSheet.create({
     container : {
@@ -199,10 +202,6 @@ class CenterCard extends React.PureComponent {
         const infoObject = {centerId,centerAddress,centerName,time,feeType,vaccineFees}
 
         let sessionsObj = centerObj.sessions
-        if(this.props.filterAge === 18)
-            sessionsObj = sessionsObj.filter(session => session.min_age_limit === 18)
-        if(this.props.filterAge === 45)
-            sessionsObj = sessionsObj.filter(session => session.min_age_limit === 45)
         
         return (
             <View style={styles.card}>
@@ -346,15 +345,39 @@ class SlotCard extends React.PureComponent {
  * @returns 
  */
 
-function filter18PlusCenters(center) { return center.sessions.some(val => val.min_age_limit === 18)}
+function filter18(center) { return center.sessions.some(val => val.min_age_limit === 18)}
+function filter18Open(center) { return center.sessions.some(val => val.min_age_limit === 18 && val.available_capacity > 0) }
+function filter18OpenDose1(center) {return center.sessions.some(val => val.min_age_limit === 18 && val.available_capacity_dose1 > 0)}
+function filter18OpenDose2(center) {return center.sessions.some(val => val.min_age_limit === 18 && val.available_capacity_dose2 > 0)}
 
-function filter45PlusCenters(center) { return center.sessions.some(val => val.min_age_limit === 45) }
+function filter45(center) { return center.sessions.some(val => val.min_age_limit === 45) }
+function filter45Open(center) {return center.sessions.some(val => val.min_age_limit === 45 && val.available_capacity > 0)}
+function filter45OpenDose1(center) {return center.sessions.some(val => val.min_age_limit === 45 && val.available_capacity_dose1 > 0)}
+function filter45OpenDose2(center) {return center.sessions.some(val => val.min_age_limit === 45 && val.available_capacity_dose2 > 0)}
 
+function filterOpen(center) { return center.sessions.some(val => val.available_capacity > 0)}
+function filterOpenDose1(center) {return center.sessions.some(val => val.available_capacity_dose1 > 0)}
+function filterOpenDose2(center) {return center.sessions.some(val => val.available_capacity_dose2 > 0)}
+
+function filterSession18(session) { return session.min_age_limit === 18}
+function filterSession18Open(session) { return session.min_age_limit == 18 && session.available_capacity > 0}
+function filterSession18OpenDose1(session) {return session.min_age_limit == 18 && session.available_capacity_dose1 > 0}
+function filterSession18OpenDose2(session) {return session.min_age_limit == 18 && session.available_capacity_dose2 > 0}
+
+function filterSession45(session) { return session.min_age_limit === 45}
+function filterSession45Open(session) { return session.min_age_limit == 45 && session.available_capacity > 0}
+function filterSession45OpenDose1(session) {return session.min_age_limit == 45 && session.available_capacity_dose1 > 0}
+function filterSession45OpenDose2(session) {return session.min_age_limit == 45 && session.available_capacity_dose2 > 0}
+
+function filterSessionOpen(session) { return session.available_capacity > 0}
+function filterSessionOpenDose1(session) { return session.available_capacity_dose1 > 0}
+function filterSessionOpenDose2(session) { return session.available_capacity_dose2 > 0}
 
 function filterNone(center) {
     //console.log("running filter none")
     return true
 }
+
 
 function VaccineSlots({navigation}) {
     /** 
@@ -363,30 +386,101 @@ function VaccineSlots({navigation}) {
     const [state,dispatch] = useReducer(vaccineInputReducer,vaccineInputInitState)
     
     const [loading,setLoading] = useState(false) 
+    const [prefLoading,setPrefLoading] = useState(true)
+    const {state : {benificiaryId,dose}} = useContext(UserContext)
+    const {isTokenValid, state : {accessToken}} = useContext(AuthContext)
 
     function runFilters() {
-        //console.log("run filters")
-        if(!state._18PlusMode && !state._45PlusMode)
-            dispatch({type : actions.setCenters, payload : state.centersStatic.filter(filterNone)})
-        else if(state._18PlusMode && !state._45PlusMode)
-            dispatch({type : actions.setCenters, payload : state.centersStatic.filter(filter18PlusCenters)})
-        else if(state._45PlusMode && !state._18PlusMode)
-            dispatch({type : actions.setCenters, payload : state.centersStatic.filter(filter45PlusCenters)})
+        let centersArr = state.centersStatic
+        if(benificiaryId === null) {
+            if(!state._18PlusMode && !state._45PlusMode && state.onlyOpenSlots) {
+                centersArr = centersArr.filter(filterOpen)
+                centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSessionOpen)}))
+            }
+            if(state._18PlusMode && !state._45PlusMode && !state.onlyOpenSlots) {
+                centersArr = centersArr.filter(filter18)
+                centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession18)}))
+            }
+            if(state._18PlusMode && !state._45PlusMode && state.onlyOpenSlots) {
+                centersArr = centersArr.filter(filter18Open)
+                centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession18Open)}))
+            }
+            if(!state._18PlusMode && state._45PlusMode && !state.onlyOpenSlots) {
+                centersArr = centersArr.filter(filter45)
+                centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession45)}))
+            }
+            if(!state._18PlusMode && state._45PlusMode && state.onlyOpenSlots) {
+                centersArr = centersArr.filter(filter45Open)
+                centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession45Open)}))
+            }
+        }
+        else {
+            if(dose === 1) {
+                if(!state._18PlusMode && !state._45PlusMode && state.onlyOpenSlots) {
+                    centersArr = centersArr.filter(filterOpenDose1)
+                    centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSessionOpenDose1)}))
+                }
+                if(state._18PlusMode && !state._45PlusMode && !state.onlyOpenSlots) {
+                    centersArr = centersArr.filter(filter18)
+                    centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession18)}))
+                }
+                if(state._18PlusMode && !state._45PlusMode && state.onlyOpenSlots) {
+                    centersArr = centersArr.filter(filter18OpenDose1)
+                    centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession18OpenDose1)}))
+                }
+                if(!state._18PlusMode && state._45PlusMode && !state.onlyOpenSlots) {
+                    centersArr = centersArr.filter(filter45)
+                    centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession45)}))
+                }
+                if(!state._18PlusMode && state._45PlusMode && state.onlyOpenSlots) {
+                    centersArr = centersArr.filter(filter45OpenDose1)
+                    centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession45OpenDose1)}))
+                }
+            }
+            else {
+                if(!state._18PlusMode && !state._45PlusMode && state.onlyOpenSlots) {
+                    centersArr = centersArr.filter(filterOpenDose2)
+                    centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSessionOpenDose2)}))
+                }
+                if(state._18PlusMode && !state._45PlusMode && !state.onlyOpenSlots) {
+                    centersArr = centersArr.filter(filter18)
+                    centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession18)}))
+                }
+                if(state._18PlusMode && !state._45PlusMode && state.onlyOpenSlots) {
+                    centersArr = centersArr.filter(filter18OpenDose2)
+                    centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession18OpenDose2)}))
+                }
+                if(!state._18PlusMode && state._45PlusMode && !state.onlyOpenSlots) {
+                    centersArr = centersArr.filter(filter45)
+                    centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession45)}))
+                }
+                if(!state._18PlusMode && state._45PlusMode && state.onlyOpenSlots) {
+                    centersArr = centersArr.filter(filter45OpenDose2)
+                    centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession45OpenDose2)}))
+                }
+            }
+        }
+        dispatch({type : actions.setCenters, payload : centersArr})
     }
 
     function fetchCenterData() {
+        let baseUrl = `https://cdn-api.co-vin.in/api/v2/appointment/sessions`
+        if(!isTokenValid()) {
+            //console.log("Token Expired")
+            baseUrl += '/public'
+        }
         //const url = 'https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByDistrict?district_id=49&date=18-05-2021'
-        const url = state.pinCodeMode && state.pinCode.length == 6 ? `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?pincode=${state.pinCode}&date=${dateToStr(state.date)}` 
-                                                                    : `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByDistrict?district_id=${state.districtId}&date=${dateToStr(state.date)}`
+        const url = state.pinCodeMode && state.pinCode.length == 6 ? `${baseUrl}/calendarByPin?pincode=${state.pinCode}&date=${dateToStr(state.date)}` 
+                                                                    : `${baseUrl}/calendarByDistrict?district_id=${state.districtId}&date=${dateToStr(state.date)}`
 
         //console.log(url)
         setLoading(true)
         fetch(url,{
-            headers : { 
+            headers : !isTokenValid() ? { 
                 'Accept' : 'application/json',
                 'Content-Type' : 'application/json',
                 'User-Agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36'
-            }
+            } : {...headers, 'Authorization' : `Bearer ${accessToken.token}`}
         })
         .then( res => res.json())
         .then(data => {
@@ -399,15 +493,78 @@ function VaccineSlots({navigation}) {
                 alert(data.error)
             }
             else {
-                let filterFunc
-                if(!state._18PlusMode && !state._45PlusMode)
-                    filterFunc = filterNone
-                else if(state._18PlusMode && !state._45PlusMode)
-                    filterFunc = filter18PlusCenters
-                else if(state._45PlusMode && !state._18PlusMode)
-                    filterFunc = filter45PlusCenters
+                let centersArr = data.centers
+                if(benificiaryId === null) {
+                    if(!state._18PlusMode && !state._45PlusMode && state.onlyOpenSlots) {
+                        centersArr = centersArr.filter(filterOpen)
+                        centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSessionOpen)}))
+                    }
+                    if(state._18PlusMode && !state._45PlusMode && !state.onlyOpenSlots) {
+                        centersArr = centersArr.filter(filter18)
+                        centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession18)}))
+                    }
+                    if(state._18PlusMode && !state._45PlusMode && state.onlyOpenSlots) {
+                        centersArr = centersArr.filter(filter18Open)
+                        centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession18Open)}))
+                    }
+                    if(!state._18PlusMode && state._45PlusMode && !state.onlyOpenSlots) {
+                        centersArr = centersArr.filter(filter45)
+                        centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession45)}))
+                    }
+                    if(!state._18PlusMode && state._45PlusMode && state.onlyOpenSlots) {
+                        centersArr = centersArr.filter(filter45Open)
+                        centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession45Open)}))
+                    }
+                }
+                else {
+                    if(dose === 1) {
+                        if(!state._18PlusMode && !state._45PlusMode && state.onlyOpenSlots) {
+                            centersArr = centersArr.filter(filterOpenDose1)
+                            centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSessionOpenDose1)}))
+                        }
+                        if(state._18PlusMode && !state._45PlusMode && !state.onlyOpenSlots) {
+                            centersArr = centersArr.filter(filter18)
+                            centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession18)}))
+                        }
+                        if(state._18PlusMode && !state._45PlusMode && state.onlyOpenSlots) {
+                            centersArr = centersArr.filter(filter18OpenDose1)
+                            centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession18OpenDose1)}))
+                        }
+                        if(!state._18PlusMode && state._45PlusMode && !state.onlyOpenSlots) {
+                            centersArr = centersArr.filter(filter45)
+                            centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession45)}))
+                        }
+                        if(!state._18PlusMode && state._45PlusMode && state.onlyOpenSlots) {
+                            centersArr = centersArr.filter(filter45OpenDose1)
+                            centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession45OpenDose1)}))
+                        }
+                    }
+                    else {
+                        if(!state._18PlusMode && !state._45PlusMode && state.onlyOpenSlots) {
+                            centersArr = centersArr.filter(filterOpenDose2)
+                            centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSessionOpenDose2)}))
+                        }
+                        if(state._18PlusMode && !state._45PlusMode && !state.onlyOpenSlots) {
+                            centersArr = centersArr.filter(filter18)
+                            centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession18)}))
+                        }
+                        if(state._18PlusMode && !state._45PlusMode && state.onlyOpenSlots) {
+                            centersArr = centersArr.filter(filter18OpenDose2)
+                            centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession18OpenDose2)}))
+                        }
+                        if(!state._18PlusMode && state._45PlusMode && !state.onlyOpenSlots) {
+                            centersArr = centersArr.filter(filter45)
+                            centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession45)}))
+                        }
+                        if(!state._18PlusMode && state._45PlusMode && state.onlyOpenSlots) {
+                            centersArr = centersArr.filter(filter45OpenDose2)
+                            centersArr = centersArr.map(center => ({...center, sessions : center.sessions.filter(filterSession45OpenDose2)}))
+                        }
+                    }
+                }
+
                 dispatch({type : actions.setCentersStatic, payload : data.centers})
-                dispatch({type : actions.setCenters, payload : data.centers.filter(filterFunc)})
+                dispatch({type : actions.setCenters, payload : centersArr})
             }
             //dispatch({type : actions.setCenters, payload: data.centers})
         })
@@ -420,19 +577,28 @@ function VaccineSlots({navigation}) {
     }
 
     useEffect(()=>{
-        console.log("Use Effect Triggered")
-        console.log({districtId : state.districtId, date : state.date, pinCodeMode : state.pinCodeMode, pinCode : state.pinCode})
+        //console.log("Use Effect Triggered")
+        //console.log({districtId : state.districtId, date : state.date, pinCodeMode : state.pinCodeMode, pinCode : state.pinCode})
+        if(prefLoading) return
         if(!state.pinCodeMode && state.districtId === 0) return
         if(state.pinCodeMode && state.pinCode.length !== 6) return
         
         //console.log(`Inside Useeffect, Did : ${distrctId} `)
         fetchCenterData()
 
-    },[state.districtId, state.date, state.pinCodeMode, state.pinCode])
+    },[state.districtId, state.date, state.pinCodeMode, state.pinCode, state.onlyOpenSlots])
 
     useEffect(()=>{
         runFilters()
-    },[state._18PlusMode,state._45PlusMode]) 
+    },[state._18PlusMode,state._45PlusMode])
+    
+    useEffect(()=>{
+        const func = async() => {
+            console.log("Requesting SMS Permissions")
+            await ReadSms.requestReadSMSPermission()
+        }
+        func()
+    },[])
 
 
     return (
@@ -448,7 +614,8 @@ function VaccineSlots({navigation}) {
                 <VaccineInput 
                     style={[styles.datePicker,styles.addMarginBottom]}
                     state={state}
-                    dispatch={dispatch} 
+                    dispatch={dispatch}
+                    prefStatus={{prefLoading,setPrefLoading}} 
                 />
                 {
                     loading &&
@@ -502,9 +669,9 @@ function VaccineSlots({navigation}) {
  */
 function dateToStr(date) {
     let day = date.getDate()
-    day = day > 10 ? day : `0${day}`
+    day = day > 9 ? day : `0${day}`
     let month = date.getMonth() + 1
-    month = month > 10 ? month : `0${month}`
+    month = month > 9 ? month : `0${month}`
     const year = date.getFullYear()
 
     return `${day}-${month}-${year}`
