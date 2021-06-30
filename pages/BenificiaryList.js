@@ -263,26 +263,6 @@ class BenificiaryCard extends React.PureComponent {
     }
 }
 
-/*const initBenificiary = {
-    "beneficiaries":[
-        {
-            "beneficiary_reference_id":"66603661854680",
-            "name":"Swapnil Bhattacharjee",
-            "birth_year":"1996",
-            "gender":"Male",
-            "mobile_number":"8097",
-            "photo_id_type":"Aadhaar Card",
-            "photo_id_number":"819040449406",
-            "comorbidity_ind":"N"
-            ,"vaccination_status":"Partially Vaccinated",
-            "vaccine":"COVISHIELD",
-            "dose1_date":"31-05-2021",
-            "dose2_date":"",
-            "appointments":[]
-        }
-    ]
-}*/
-
 function ListEmptyCard() {
     return (
         <View style={{
